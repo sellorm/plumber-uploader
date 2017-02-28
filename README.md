@@ -2,6 +2,8 @@
 
 A really hacky implementation of a file uploader in R using the [plumber](http://plumber.trestletech.com) package.
 
+A request for a better way to do this has been [raised in the plumber project](https://github.com/trestletech/plumber/issues/75).
+
 ## Notes
 
 * Currently only works with text based files. Binary files are corrupted on upload.
