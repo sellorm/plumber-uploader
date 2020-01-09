@@ -1,21 +1,29 @@
-Sys.setlocale('LC_ALL','C')
+# One-off demo (start server, curl, kill server):
+#
+# R -q -e 'plumber::plumb("upload.R")$run(port = 4321)' & R_PID=$! && sleep 1 && curl -v -F "upload=@dummy.pdf" "http://localhost:4321/upload" -H "accept: application/json" && kill $R_PID
+#
+#
+# Query only:
+#
+# curl -v -F "upload=@dummy.pdf" "http://localhost:4321/upload" -H "accept: application/json"
+
 #* @post /upload
-upload <- function(req, res){
-  cat("---- New Request ----\n")
-  # the path where you want to write the uploaded files
-  file_path <- "./uploads/"
-  # strip the filename out of the postBody
-  file_name <- gsub('\"', "", substr(req$postBody[2], 55, 1000))
-  # need the length of the postBody so we know how much to write out
-  file_length <- length(req$postBody)-1
-  # first five lines of the post body contain metadata so are ignored
-  file_content <- req$postBody[5:file_length]
-  # build the path of the file to write
-  file_to_write <- paste0(file_path, file_name)
-  # write file out with no other checks at this time
-  write(file_content, file = file_to_write)
-  # print logging info to console
-  cat("File", file_to_write, "uploaded\n")
-  # return file path &name to user
-  return(file_to_write)
+upload <- function(req, res) {
+  multipart <- mime::parse_multipart(req)
+  
+  in_file <- multipart$upload$name
+  out_file <- multipart$upload$datapath
+  
+  list(
+    "in" = list(
+      path = jsonlite::unbox(in_file),
+      size = jsonlite::unbox(fs::file_size(in_file)),
+      md5 = jsonlite::unbox(digest::digest(in_file, file = TRUE))
+    ),
+    "out" = list(
+      path = jsonlite::unbox(out_file),
+      size = jsonlite::unbox(fs::file_size(out_file)),
+      md5 = jsonlite::unbox(digest::digest(out_file, file = TRUE))
+    )
+  )
 }
